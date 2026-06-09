@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🔥 Outfit Roaster</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      min-height: 100vh;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    /* Floating emoji background */
+    body::before {
+      content: '👕 👗 👖 👠 👟 🧥 👔 🩳 👞 👢 🧣 💍 🕶️';
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      font-size: 40px;
+      opacity: 0.03;
+      pointer-events: none;
+      letter-spacing: 40px;
+      line-height: 2;
+      text-align: center;
+      padding: 60px;
+      white-space: pre-wrap;
+    }
+
+    .container {
+      max-width: 600px;
+      width: 100%;
+      position: relative;
+      z-index: 1;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .header h1 {
+      font-size: 3rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, #ff6b6b, #feca57, #ff9ff3);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+
+    .header .subtitle {
+      color: #aaa;
+      font-size: 1.05rem;
+      letter-spacing: 1px;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      padding: 30px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Upload zone */
+    .upload-zone {
+      border: 3px dashed rgba(255, 255, 255, 0.25);
+      border-radius: 20px;
+      padding: 50px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .upload-zone:hover,
+    .upload-zone.drag-over {
+      border-color: #ff6b6b;
+      background: rgba(255, 107, 107, 0.08);
+    }
+
+    /* Mode tabs */
+    .mode-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .mode-tab {
+      flex: 1;
+      padding: 12px;
+      font-size: 1rem;
+      font-weight: 700;
+      border: 2px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.04);
+      color: #888;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .mode-tab.active {
+      background: rgba(255,107,107,0.15);
+      border-color: #ff6b6b;
+      color: #ff6b6b;
+    }
+
+    .mode-tab:hover {
+      border-color: rgba(255,255,255,0.3);
+    }
+
+    /* Text zone */
+    .text-zone textarea {
+      width: 100%;
+      padding: 16px;
+      background: rgba(255,255,255,0.06);
+      border: 2px solid rgba(255,255,255,0.15);
+      border-radius: 16px;
+      color: #fff;
+      font-size: 1rem;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 100px;
+      transition: border-color 0.3s;
+    }
+
+    .text-zone textarea:focus {
+      outline: none;
+      border-color: #ff6b6b;
+    }
+
+    .text-zone textarea::placeholder {
+      color: #666;
+    }
+
+    .text-hint {
+      color: #666;
+      font-size: 0.85rem;
+      margin-top: 8px;
+      text-align: center;
+    }
+
+    .upload-icon {
+      font-size: 64px;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .upload-zone h3 {
+      font-size: 1.3rem;
+      margin-bottom: 6px;
+    }
+
+    .upload-zone p {
+      color: #888;
+      font-size: 0.9rem;
+    }
+
+    #fileInput {
+      display: none;
+    }
+
+    /* Preview */
+    .preview-container {
+      display: none;
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .preview-container.active {
+      display: block;
+    }
+
+    .preview-image {
+      max-width: 100%;
+      max-height: 350px;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      object-fit: contain;
+      background: #1a1a2e;
+    }
+
+    /* Buttons */
+    .btn-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 18px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 14px 32px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      letter-spacing: 0.5px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-roast {
+      background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+      color: #fff;
+      box-shadow: 0 6px 25px rgba(238, 90, 36, 0.4);
+    }
+
+    .btn-roast:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 35px rgba(238, 90, 36, 0.6);
+    }
+
+    .btn-roast:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.18);
+    }
+
+    .btn-camera {
+      background: linear-gradient(135deg, #a29bfe, #6c5ce7);
+      color: #fff;
+      box-shadow: 0 6px 25px rgba(108, 92, 231, 0.4);
+    }
+
+    .btn-camera:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 35px rgba(108, 92, 231, 0.6);
+    }
+
+    /* Result */
+    .result {
+      display: none;
+      margin-top: 24px;
+      padding: 24px;
+      background: rgba(255, 107, 107, 0.08);
+      border: 1px solid rgba(255, 107, 107, 0.3);
+      border-radius: 20px;
+      animation: slideUp 0.5s ease;
+    }
+
+    .result.active {
+      display: block;
+    }
+
+    .result-header {
+      font-size: 1.5rem;
+      margin-bottom: 12px;
+    }
+
+    .roast-text {
+      font-size: 1.15rem;
+      line-height: 1.7;
+      color: #ddd;
+      white-space: pre-wrap;
+    }
+
+    .roast-score {
+      display: inline-block;
+      background: #ff6b6b;
+      color: #fff;
+      font-weight: 900;
+      font-size: 2rem;
+      padding: 6px 18px;
+      border-radius: 50px;
+      margin-bottom: 12px;
+    }
+
+    /* Loading spinner */
+    .loading {
+      display: none;
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .loading.active {
+      display: block;
+    }
+
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid rgba(255, 255, 255, 0.15);
+      border-top-color: #ff6b6b;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 12px;
+    }
+
+    .loading-text {
+      color: #aaa;
+      font-size: 0.95rem;
+    }
+
+    .loading-text .dots::after {
+      content: '';
+      animation: dots 1.5s steps(4, end) infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes dots {
+      0%   { content: ''; }
+      25%  { content: '.'; }
+      50%  { content: '..'; }
+      75%  { content: '...'; }
+      100% { content: ''; }
+    }
+
+    /* Camera */
+    .camera-container {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.95);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+
+    .camera-container.active {
+      display: flex;
+    }
+
+    #cameraVideo {
+      max-width: 100%;
+      max-height: 70vh;
+      border-radius: 20px;
+    }
+
+    #cameraCanvas {
+      display: none;
+    }
+
+    .camera-btns {
+      margin-top: 20px;
+      display: flex;
+      gap: 16px;
+    }
+
+    .error-msg {
+      color: #ff6b6b;
+      text-align: center;
+      margin-top: 12px;
+      font-size: 0.9rem;
+      display: none;
+    }
+
+    .error-msg.active {
+      display: block;
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      margin-top: 20px;
+      color: #555;
+      font-size: 0.8rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 500px) {
+      .header h1 { font-size: 2.2rem; }
+      .card { padding: 20px; }
+      .upload-zone { padding: 30px 15px; }
+      .btn { padding: 12px 24px; font-size: 0.95rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>🔥 Outfit Roaster</h1>
+    <p class="subtitle">upload your fit. get absolutely roasted.</p>
+  </div>
+
+  <div class="card">
+    <!-- Mode Tabs -->
+    <div class="mode-tabs">
+      <button class="mode-tab active" id="tabPhoto">📸 Photo</button>
+      <button class="mode-tab" id="tabText">✍️ Describe</button>
+    </div>
+
+    <!-- Upload Zone (photo mode) -->
+    <div class="upload-zone" id="uploadZone">
+      <span class="upload-icon">📸</span>
+      <h3>Click to upload a photo</h3>
+      <p>or drag &amp; drop your outfit pic here</p>
+    </div>
+    <input type="file" id="fileInput" accept="image/*">
+
+    <!-- Text description (text mode) -->
+    <div class="text-zone" id="textZone" style="display:none;">
+      <textarea id="outfitDescription" placeholder="Describe your outfit... e.g. 'Neon green hoodie, ripped black jeans, white Crocs, and a backwards cap'"
+        rows="4"></textarea>
+      <p class="text-hint">The more detail, the better the roast 🔥</p>
+    </div>
+
+    <!-- Preview -->
+    <div class="preview-container" id="previewContainer">
+      <img class="preview-image" id="previewImage" alt="Your outfit">
+    </div>
+
+    <!-- Error -->
+    <div class="error-msg" id="errorMsg"></div>
+
+    <!-- Buttons -->
+    <div class="btn-row" id="btnRow">
+      <button class="btn btn-camera" id="btnCamera">📷 Take Photo</button>
+      <button class="btn btn-roast" id="btnRoast" disabled>🔥 Roast My Fit</button>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <p class="loading-text">AI is judging your outfit<span class="dots"></span></p>
+    </div>
+
+    <!-- Result -->
+    <div class="result" id="result">
+      <div id="roastContent"></div>
+    </div>
+  </div>
+
+  <p class="footer">powered by OpenRouter &amp; Gemma — don't take it personally 💀</p>
+</div>
+
+<!-- Camera Modal -->
+<div class="camera-container" id="cameraContainer">
+  <video id="cameraVideo" autoplay playsinline></video>
+  <canvas id="cameraCanvas"></canvas>
+  <div class="camera-btns">
+    <button class="btn btn-roast" id="btnCapture">📸 Capture</button>
+    <button class="btn btn-secondary" id="btnCloseCamera">✕ Close</button>
+  </div>
+</div>
+
+<script>
+  // ──────────────────────────────────────────
+  //  CONFIG — OpenRouter (all-in-one, no backend needed)
+  // ──────────────────────────────────────────
+  const OPENROUTER_API_KEY='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';
+  const OPENROUTER_MODEL = 'google/gemma-4-26b-a4b-it:free';
+  const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
+
+  const SYSTEM_PROMPT = `You are a SAVAGE fashion critic who roasts outfits with brutal honesty, sharp wit, and comedian-level humor.
+
+The user will describe their outfit or show you a photo. Your job: deliver a devastatingly funny roast.
+
+RULES:
+- Be specific — call out individual items, colors, patterns, fits, and styling choices.
+- Be creative with metaphors, comparisons, and pop-culture references.
+- Absolutely ruthless but always playful — never cruel or personal (don't attack body, race, gender, etc.).
+- Vary your style: sometimes a one-liner barrage, sometimes a theatrical read.
+- End your response with a rating on its own line in exactly this format: "Score: X/10" (X can include one decimal, e.g. 3.5/10).
+
+Examples of the tone: "You look like a thrift store exploded on a middle-school science teacher." / "That color combo is what happens when a highlighter factory has a meltdown."
+
+Now roast the outfit!`;
+  // ──────────────────────────────────────────
+  //  DOM REFS
+  // ──────────────────────────────────────────
+  const uploadZone = document.getElementById('uploadZone');
+  const textZone = document.getElementById('textZone');
+  const outfitDescription = document.getElementById('outfitDescription');
+  const fileInput = document.getElementById('fileInput');
+  const previewContainer = document.getElementById('previewContainer');
+  const previewImage = document.getElementById('previewImage');
+  const btnRoast = document.getElementById('btnRoast');
+  const btnCamera = document.getElementById('btnCamera');
+  const btnRow = document.getElementById('btnRow');
+  const loading = document.getElementById('loading');
+  const result = document.getElementById('result');
+  const roastContent = document.getElementById('roastContent');
+  const errorMsg = document.getElementById('errorMsg');
+  const cameraContainer = document.getElementById('cameraContainer');
+  const cameraVideo = document.getElementById('cameraVideo');
+  const cameraCanvas = document.getElementById('cameraCanvas');
+  const btnCapture = document.getElementById('btnCapture');
+  const btnCloseCamera = document.getElementById('btnCloseCamera');
+
+  let currentImageBase64 = null;
+  let currentMode = 'photo'; // 'photo' | 'text'
+  let cameraStream = null;
+
+  // ──────────────────────────────────────────
+  //  MODE TABS
+  // ──────────────────────────────────────────
+  document.getElementById('tabPhoto').addEventListener('click', () => switchMode('photo'));
+  document.getElementById('tabText').addEventListener('click', () => switchMode('text'));
+
+  function switchMode(mode) {
+    currentMode = mode;
+    document.getElementById('tabPhoto').classList.toggle('active', mode === 'photo');
+    document.getElementById('tabText').classList.toggle('active', mode === 'text');
+    
+    if (mode === 'photo') {
+      uploadZone.style.display = '';
+      textZone.style.display = 'none';
+      btnCamera.style.display = '';
+      if (currentImageBase64) {
+        previewContainer.classList.add('active');
+        btnRoast.disabled = false;
+      } else {
+        previewContainer.classList.remove('active');
+        btnRoast.disabled = true;
+      }
+    } else {
+      uploadZone.style.display = 'none';
+      textZone.style.display = '';
+      btnCamera.style.display = 'none';
+      previewContainer.classList.remove('active');
+      currentImageBase64 = null;
+      btnRoast.disabled = outfitDescription.value.trim().length < 10;
+    }
+    hideResult();
+    hideError();
+  }
+
+  // Enable roast button when text is typed
+  outfitDescription.addEventListener('input', () => {
+    if (currentMode === 'text') {
+      btnRoast.disabled = outfitDescription.value.trim().length < 10;
+    }
+  });
+
+  // ──────────────────────────────────────────
+  //  UPLOAD: Click
+  // ──────────────────────────────────────────
+  uploadZone.addEventListener('click', () => fileInput.click());
+
+  // ──────────────────────────────────────────
+  //  UPLOAD: Drag & Drop
+  // ──────────────────────────────────────────
+  uploadZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadZone.classList.add('drag-over');
+  });
+
+  uploadZone.addEventListener('dragleave', () => {
+    uploadZone.classList.remove('drag-over');
+  });
+
+  uploadZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadZone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+  });
+
+  // ──────────────────────────────────────────
+  //  UPLOAD: File input change
+  // ──────────────────────────────────────────
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files[0];
+    if (file) handleFile(file);
+  });
+
+  // ──────────────────────────────────────────
+  //  FILE HANDLER
+  // ──────────────────────────────────────────
+  function handleFile(file) {
+    if (!file.type.startsWith('image/')) {
+      showError('Please upload an image file (JPEG, PNG, etc.)');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      showError('Image too large! Keep it under 10MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      currentImageBase64 = e.target.result;
+      previewImage.src = currentImageBase64;
+      previewContainer.classList.add('active');
+      uploadZone.style.display = 'none';
+      btnRoast.disabled = false;
+      hideError();
+      hideResult();
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // ──────────────────────────────────────────
+  //  RESET
+  // ──────────────────────────────────────────
+  function resetUpload() {
+    currentImageBase64 = null;
+    previewContainer.classList.remove('active');
+    uploadZone.style.display = '';
+    btnRoast.disabled = true;
+    fileInput.value = '';
+    hideResult();
+    hideError();
+  }
+
+  // ──────────────────────────────────────────
+  //  CAMERA
+  // ──────────────────────────────────────────
+  btnCamera.addEventListener('click', openCamera);
+  btnCloseCamera.addEventListener('click', closeCamera);
+  btnCapture.addEventListener('click', capturePhoto);
+
+  async function openCamera() {
+    try {
+      cameraStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' }
+      });
+      cameraVideo.srcObject = cameraStream;
+      cameraContainer.classList.add('active');
+    } catch (err) {
+      showError('Camera access denied or not available. Try uploading a photo instead.');
+    }
+  }
+
+  function closeCamera() {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(t => t.stop());
+      cameraStream = null;
+    }
+    cameraVideo.srcObject = null;
+    cameraContainer.classList.remove('active');
+  }
+
+  function capturePhoto() {
+    cameraCanvas.width = cameraVideo.videoWidth;
+    cameraCanvas.height = cameraVideo.videoHeight;
+    cameraCanvas.getContext('2d').drawImage(cameraVideo, 0, 0);
+    currentImageBase64 = cameraCanvas.toDataURL('image/jpeg', 0.9);
+    previewImage.src = currentImageBase64;
+    previewContainer.classList.add('active');
+    uploadZone.style.display = 'none';
+    btnRoast.disabled = false;
+    hideError();
+    hideResult();
+    closeCamera();
+  }
+
+  // ──────────────────────────────────────────
+  //  ROAST!
+  // ──────────────────────────────────────────
+  btnRoast.addEventListener('click', roastOutfit);
+
+  async function roastOutfit() {
+    showLoading();
+    hideResult();
+    hideError();
+
+    try {
+      // Build the message content
+      let userContent;
+
+      if (currentMode === 'text') {
+        const desc = outfitDescription.value.trim();
+        if (desc.length < 10) {
+          showError('Describe your outfit in at least 10 characters!');
+          hideLoading();
+          return;
+        }
+        userContent = `Describe this outfit and ROAST it: ${desc}`;
+      } else {
+        if (!currentImageBase64) return;
+        // Send as multimodal: text + image as data URL
+        userContent = [
+          {
+            type: 'text',
+            text: 'Roast this outfit in the photo. Be brutal and funny!'
+          },
+          {
+            type: 'image_url',
+            image_url: {
+              url: currentImageBase64
+            }
+          }
+        ];
+      }
+
+      // Build the messages array
+      const messages = [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: userContent }
+      ];
+
+      // Call OpenRouter
+      const response = await fetch(OPENROUTER_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'HTTP-Referer': window.location.href || 'http://localhost',
+          'X-Title': 'Outfit Roaster'
+        },
+        body: JSON.stringify({
+          model: OPENROUTER_MODEL,
+          messages: messages,
+          max_tokens: 500,
+          temperature: 0.9
+        })
+      });
+
+      if (!response.ok) {
+        const errBody = await response.text();
+        let errMsg = `API error (${response.status})`;
+        try {
+          const errJson = JSON.parse(errBody);
+          errMsg = errJson.error?.message || errJson.message || errMsg;
+        } catch (_) { /* use raw status */ }
+        throw new Error(errMsg);
+      }
+
+      const data = await response.json();
+      const roast = data.choices?.[0]?.message?.content;
+
+      if (!roast) {
+        throw new Error('No roast returned — the AI was speechless!');
+      }
+
+      displayRoast(roast.trim());
+    } catch (err) {
+      showError(`Roast failed: ${err.message}`);
+    } finally {
+      hideLoading();
+    }
+  }
+
+  // ──────────────────────────────────────────
+  //  DISPLAY ROAST
+  // ──────────────────────────────────────────
+  function displayRoast(roastText) {
+    let score = null;
+    const scoreMatch = roastText.match(/(\d+(?:\.\d+)?)\s*\/\s*10/);
+    if (scoreMatch) {
+      score = scoreMatch[1];
+    }
+
+    let html = '<div class="result-header">🔥 ROAST VERDICT</div>';
+
+    if (score) {
+      const emoji = score >= 7 ? '🔥' : score >= 4 ? '😬' : '💀';
+      html += `<div class="roast-score">${emoji} ${score}/10</div>`;
+    }
+
+    html += `<div class="roast-text">${escapeHtml(roastText)}</div>`;
+
+    roastContent.innerHTML = html;
+    result.classList.add('active');
+    result.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  // ──────────────────────────────────────────
+  //  HELPERS
+  // ──────────────────────────────────────────
+  function showLoading() {
+    loading.classList.add('active');
+    btnRoast.disabled = true;
+  }
+
+  function hideLoading() {
+    loading.classList.remove('active');
+    btnRoast.disabled = false;
+  }
+
+  function showResult() { result.classList.add('active'); }
+  function hideResult() { result.classList.remove('active'); }
+
+  function showError(msg) {
+    errorMsg.textContent = msg;
+    errorMsg.classList.add('active');
+  }
+
+  function hideError() {
+    errorMsg.textContent = '';
+    errorMsg.classList.remove('active');
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // ──────────────────────────────────────────
+  //  PASTE SUPPORT
+  // ──────────────────────────────────────────
+  document.addEventListener('paste', (e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (const item of items) {
+      if (item.type.startsWith('image/')) {
+        e.preventDefault();
+        const file = item.getAsFile();
+        handleFile(file);
+        break;
+      }
+    }
+  });
+
+  // ──────────────────────────────────────────
+  //  DRAG OVER WHOLE PAGE
+  // ──────────────────────────────────────────
+  let dragCounter = 0;
+  document.addEventListener('dragenter', () => {
+    dragCounter++;
+    if (uploadZone.style.display !== 'none') {
+      uploadZone.classList.add('drag-over');
+    }
+  });
+  document.addEventListener('dragleave', () => {
+    dragCounter--;
+    if (dragCounter === 0) {
+      uploadZone.classList.remove('drag-over');
+    }
+  });
+  document.addEventListener('drop', () => {
+    dragCounter = 0;
+    uploadZone.classList.remove('drag-over');
+  });
+</script>
+
+</body>
+</html>
